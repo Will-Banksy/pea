@@ -1,12 +1,4 @@
 # Python Executable Analyser (PEA)
-# Capabilities
-#     Matching YARA rules (pkg: yara-python)
-#     ClamAV scanning (pkg: python-clamav or clamd (https://github.com/graingert/python-clamd))
-#     VirusTotal scanning (pkg: vt-py) - VirusTotal I think lists ClamAV results so if I can use VirusTotal that kinda makes ClamAV integration unnecessary
-#     Import/Export listing, library listing (pkgs: pyelftools, pefile)
-#     Function disassembly (and decompilation?) with perhaps capstone or rizin and decompilation if implemented either though rizin with rz-ghidra or using ghidra directly somehow. Or maybe using retdec or jsdec or another decompiler
-#     Capability listing with capa
-#     argparse
 
 import argparse
 import hashlib
@@ -27,11 +19,10 @@ from elftools.elf import elffile
 
 
 def main():
-	# TODO function list or callgraph?
 	default_min_strings = 5
 
 	# Define the command line arguments
-	parser = argparse.ArgumentParser(description="Python Executable Analyser (PEA)")
+	parser = argparse.ArgumentParser(prog="pea", description="Python Executable Analyser (PEA)")
 	parser.add_argument("executable", type=argparse.FileType("rb"), help="The executable to be analysed")
 	parser.add_argument("--version", "-V", action="version", version="Python Executable Analyser (PEA) v1.0",
 						help="Print version and exit")
