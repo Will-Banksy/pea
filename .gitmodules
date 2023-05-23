@@ -1,3 +1,6 @@
 [submodule "rules"]
 	path = rules
 	url = https://github.com/Yara-Rules/rules
+[submodule "capa"]
+	path = capa
+	url = https://github.com/mandiant/capa
