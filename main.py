@@ -12,6 +12,7 @@ import sys
 from functools import reduce
 
 import pefile
+import pydemangler
 import vt
 import yara
 
@@ -21,8 +22,10 @@ from elftools.elf import elffile
 def main():
 	default_min_strings = 5
 
+	epilogue = "Output is in JSON format [ { \"analysis\": \"<analysis_method>\", \"results\": { <analysis_dependent_output> } } ]"
+
 	# Define the command line arguments
-	parser = argparse.ArgumentParser(prog="pea", description="Python Executable Analyser (PEA)")
+	parser = argparse.ArgumentParser(prog="pea", description="Python Executable Analyser (PEA)", epilog=epilogue)
 	parser.add_argument("executable", type=argparse.FileType("rb"), help="The executable to be analysed")
 	parser.add_argument("--version", "-V", action="version", version="Python Executable Analyser (PEA) v1.0",
 						help="Print version and exit")
@@ -174,17 +177,20 @@ def metadata_analysis(open_exe_file):
 		pe = pefile.PE(data=open_exe_file.read())
 		open_exe_file.seek(0)
 
-		# Collect all the imports into an array of objects/dicts that contain the DLL name and a list of imported functions
+		# Collect all the imports into an array of objects/dicts that contain the demangled DLL name and a list of imported functions
 		imports = [
-			{entry.dll.decode("utf-8"): [imp.name.decode("utf-8") for imp in entry.imports]} for entry in
+			{entry.dll.decode("utf-8"): [demangle(imp.name.decode("utf-8")) for imp in
+										 entry.imports]} for entry
+			in
 			pe.DIRECTORY_ENTRY_IMPORT
 		]
 
 		# It's possible for a file to have no exports e.g. most EXEs
 		if hasattr(pe, "DIRECTORY_ENTRY_EXPORT"):
-			# But if it does, collect the exported function names into a list
+			# But if it does, collect the demangled exported function names into a list
 			exports = [
-				entry.name.decode("utf-8") for entry in pe.DIRECTORY_ENTRY_EXPORT.symbols
+				demangle(entry.name.decode("utf-8")) for entry in
+				pe.DIRECTORY_ENTRY_EXPORT.symbols
 			]
 		else:
 			exports = []
@@ -219,10 +225,13 @@ def metadata_analysis(open_exe_file):
 			"type": sect.header.sh_type
 		} for sect in elf.iter_sections()]
 
+		# Collect all the sections that are symbol tables
 		symbol_tables = [symtabs for symtabs in elf.iter_sections() if isinstance(symtabs, elffile.SymbolTableSection)]
 
+		# Then iterate through the symbol tables, concatenating all the lists of symbols from each into one big list
+		# which is then used to generate a list of the symbol names, demangling C++ names where necessary
 		symbols = reduce(operator.iconcat, [sect.iter_symbols() for sect in symbol_tables], [])
-		symbols_strs = [sym.name for sym in symbols]
+		symbols_strs = [demangle(sym.name) for sym in symbols]
 
 		# Build data structure to return
 		return {
@@ -313,6 +322,15 @@ def strings_analysis(open_exe_file, strings_len):
 			"strings": strs
 		}
 	}
+
+
+def demangle(name):
+	# Demangle using pydemangler - If the name could not be demangled or there was an error in the demangling, just return the original name
+	demangled = pydemangler.demangle(name)
+	if demangled is None:
+		return name
+	else:
+		return demangled
 
 
 # The entry point - just call the defined main function

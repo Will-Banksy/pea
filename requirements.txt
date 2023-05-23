@@ -3,3 +3,4 @@ vt-py
 pefile
 pyelftools
 flare-capa
+pydemangler@ git+https://github.com/wbenny/pydemangler.git

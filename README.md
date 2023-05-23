@@ -14,14 +14,14 @@ Supported:
 
 ## Usage
 
-Requires `virtualenv` for setup:
+Requires `virtualenv` and `make` for setup:
 
-```commandline
+```bash
 make
 ```
 
 Once setup is complete, to run the program simply run the shell script `pea`, e.g.:
 
-```commandline
+```bash
 ./pea -h
 ```
