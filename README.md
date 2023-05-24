@@ -20,7 +20,7 @@ Requires `virtualenv` and `make` for setup:
 make
 ```
 
-Once setup is complete, to run the program simply run the shell script `pea`, e.g.:
+Once setup is complete, to run the program simply run the bash script `pea`, e.g.:
 
 ```bash
 ./pea -h

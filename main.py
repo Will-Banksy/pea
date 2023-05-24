@@ -41,7 +41,8 @@ def main():
 	parser.add_argument("--strings", "-s", metavar="min_chars", type=int, const=default_min_strings, default=-1,
 						nargs="?",
 						dest="strings",
-						help="Extract ASCII-compatible strings. Provide the minimum string length as the option argument, will default to 5 if omitted. May produce a lot of output especially at lower minimum string lengths")
+						help="Extract ASCII-compatible strings. Provide the minimum string length as the option argument, will default to 5"
+							 " if omitted. May produce a lot of output especially at lower minimum string lengths")
 	parser.add_argument("--all", "-a", action="store_true", dest="all",
 						help="Perform yara, metadata, capa and strings analysis")
 
