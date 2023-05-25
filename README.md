@@ -14,7 +14,9 @@ Supported:
 
 ## Usage
 
-Requires `virtualenv` and `make` for setup:
+May require a Linux environment - steps may be different in a windows environment. Untested.
+
+Requires `virtualenv`, `make` and `git` for setup:
 
 ```bash
 make
