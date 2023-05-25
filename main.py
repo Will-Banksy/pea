@@ -83,19 +83,19 @@ def do_analysis(open_exe_file, do_yara, do_virustotal, do_metadata, do_capa, do_
 
 	# For each analysis, if the parameters are set to perform them, then perform them, adding their output into ret
 	if do_yara:
-		print("[INFO] Matching YARA rules...", file=sys.stderr)
+		print("[INFO]: Matching YARA rules...", file=sys.stderr)
 		ret.append(yara_analysis(exe_path))
 	if do_virustotal and len(vt_api_key) != 0:
-		print("[INFO] Looking up executable on VirusTotal...", file=sys.stderr)
+		print("[INFO]: Looking up executable on VirusTotal...", file=sys.stderr)
 		ret.append(virustotal_analysis(exe_hash, vt_api_key))
 	if do_metadata:
-		print("[INFO] Examining executable metadata...", file=sys.stderr)
+		print("[INFO]: Examining executable metadata...", file=sys.stderr)
 		ret.append(metadata_analysis(open_exe_file))
 	if do_capa:
-		print("[INFO] Performing capabilities analysis...", file=sys.stderr)
+		print("[INFO]: Performing capabilities analysis...", file=sys.stderr)
 		ret.append(capa_analysis(exe_path))
 	if do_strings:
-		print("[INFO] Extracting strings...", file=sys.stderr)
+		print("[INFO]: Extracting strings...", file=sys.stderr)
 		ret.append(strings_analysis(open_exe_file, strings_len))
 
 	# cd back to the saved path
@@ -146,22 +146,32 @@ def yara_analysis(exe_path) -> dict:
 
 
 def virustotal_analysis(exe_hash, api_key) -> dict:
-	# Pretty simple usage of vt-py here to get information on the file hash
 	vt_client = vt.Client(api_key)
-	vt_file = vt_client.get_object(f"/files/{exe_hash}")
-	vt_client.close()
+	try:
+		# Pretty simple usage of vt-py here to get information on the file hash
+		vt_file = vt_client.get_object(f"/files/{exe_hash}")
+		vt_client.close()
 
-	# Create a data structure to return, using .get(...) cause if the key doesn't exist that returns null instead of throwing an exception
-	return {
-		"analysis": "VirusTotal",
-		"results": {
-			"sha256": vt_file.get("sha256"),
-			"votes": vt_file.get("total_votes"),
-			"file_names": vt_file.get("names"),
-			"analysis_stats": vt_file.get("last_analysis_stats"),
-			"tags": vt_file.get("tags")
+		# Create a data structure to return, using .get(...) cause if the key doesn't exist that returns null instead of throwing an exception
+		return {
+			"analysis": "VirusTotal",
+			"results": {
+				"sha256": vt_file.get("sha256"),
+				"votes": vt_file.get("total_votes"),
+				"file_names": vt_file.get("names"),
+				"analysis_stats": vt_file.get("last_analysis_stats"),
+				"tags": vt_file.get("tags")
+			}
 		}
-	}
+	except vt.APIError:
+		# Fallback for if the hash is not found
+		vt_client.close()
+		print("[INFO]: VirusTotal record not found")
+		return {
+			"analysis": "VirusTotal",
+			"results": {
+			}
+		}
 
 
 def metadata_analysis(open_exe_file):
@@ -239,7 +249,8 @@ def metadata_analysis(open_exe_file):
 			"analysis": "metadata",
 			"results": {
 				"format": "ELF",
-				"type": "executable" if elf.header.e_type == "ET_EXEC" else "shared object" if elf.header.e_type == "ET_DYN" else "relocatable" if elf.header.e_type == "ET_REL" else "Core" if elf.header.e_type == "ET_CORE" else elf.header.e_type,
+				"type": "executable" if elf.header.e_type == "ET_EXEC" else "shared object" if elf.header.e_type == "ET_DYN" else "relocatable" if elf.header.e_type == "ET_REL"
+				else "Core" if elf.header.e_type == "ET_CORE" else elf.header.e_type,
 				"class": f"{elf.elfclass}-bit",
 				"machine": "x86_64" if elf.header.e_machine == "EM_X86_64" else "x86" if elf.header.e_machine == "EM_386" else elf.header.e_machine,
 				"has_debug_info": elf.has_dwarf_info(),
